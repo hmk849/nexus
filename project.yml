@@ -1,0 +1,45 @@
+name: NEXUS
+options:
+  bundleIdPrefix: dev.nexus
+  developmentLanguage: zh-Hans
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "18.0"          # 主要目标 iOS 26–27；18.0 起提供 Material 兼容回退
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1,2"
+targets:
+  NEXUS:
+    type: application
+    platform: iOS
+    sources:
+      - path: NEXUS/Sources
+      - path: NEXUS/Resources
+    info:
+      path: NEXUS/Info.plist
+      properties:
+        CFBundleDisplayName: NEXUS
+        CFBundleLocalizations: [zh-Hans, en]
+        UILaunchScreen: {}
+        ITSAppUsesNonExemptEncryption: false
+        NSMotionUsageDescription: NEXUS 在「设备检测」中读取加速度计，仅用于实时显示，不会上传。
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hann.nexus
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_STYLE: Automatic
