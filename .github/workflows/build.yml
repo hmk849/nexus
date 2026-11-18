@@ -28,9 +28,6 @@ jobs:
           xcodegen generate
           echo "--- Info.plist on disk after xcodegen ---"
           grep -A1 "CFBundleShortVersionString\|CFBundleVersion" NEXUS/Info.plist
-      - name: Show version build settings
-        run: |
-          xcodebuild -project NEXUS.xcodeproj -scheme NEXUS -configuration Release -sdk iphoneos -showBuildSettings | grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION|INFOPLIST_FILE|GENERATE_INFOPLIST"
       - name: Build (no signing)
         run: |
           xcodebuild -project NEXUS.xcodeproj -scheme NEXUS -configuration Release \
@@ -51,6 +48,8 @@ jobs:
           for k in ['CFBundleExecutable', 'CFBundleIdentifier', 'CFBundleShortVersionString', 'MinimumOSVersion']:
               print(k, '=', d.get(k))
               assert d.get(k), k
+          assert d['CFBundleShortVersionString'] == '1.0.1', d['CFBundleShortVersionString']
+          assert d['CFBundleVersion'] == '2', d['CFBundleVersion']
           app = names[0][:-len('Info.plist')]
           assert app + d['CFBundleExecutable'] in z.namelist(), 'missing executable'
           print('IPA OK')
