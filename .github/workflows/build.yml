@@ -24,7 +24,13 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate Xcode project
-        run: xcodegen generate
+        run: |
+          xcodegen generate
+          echo "--- Info.plist on disk after xcodegen ---"
+          grep -A1 "CFBundleShortVersionString\|CFBundleVersion" NEXUS/Info.plist
+      - name: Show version build settings
+        run: |
+          xcodebuild -project NEXUS.xcodeproj -scheme NEXUS -configuration Release -sdk iphoneos -showBuildSettings | grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION|INFOPLIST_FILE|GENERATE_INFOPLIST"
       - name: Build (no signing)
         run: |
           xcodebuild -project NEXUS.xcodeproj -scheme NEXUS -configuration Release \
