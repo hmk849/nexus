@@ -133,7 +133,7 @@ struct MobileGestaltView: View {
 
     private var presetsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            L("预设只修改上面载入的 plist 副本，并可撤销；NEXUS 不会把结果写入系统。键名无公开资料可核对的功能不提供一键修改。").font(.caption).foregroundStyle(.secondary)
+            L("预设只修改上面载入的 plist 副本，并可撤销；NEXUS 不会把结果写入系统。键名已与 GitHub 项目 MGKeys 的映射表逐项核对；值是否被系统接受无法验证，因此一律标「未经验证」。").font(.caption).foregroundStyle(.secondary)
             ForEach(PresetCatalog.all) { p in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
@@ -227,8 +227,10 @@ struct GestaltNodeView: View {
         let q = search.trimmingCharacters(in: .whitespaces).lowercased()
         guard !q.isEmpty else { return entries }
         return entries.filter { e in
-            let name = (PresetCatalog.knownKeys[e.step.label] ?? "").lowercased()
-            let keyHit = e.step.label.lowercased().contains(q) || name.contains(q)
+            let name = (PresetCatalog.readableName(e.step.label) ?? "").lowercased()
+            // 输入明文键名（如 DeviceSupportsDynamicIsland）时，按混淆算法算出哈希再匹配
+            let hashHit = e.step.label == MGKeyCatalog.hash(search.trimmingCharacters(in: .whitespaces))
+            let keyHit = hashHit || e.step.label.lowercased().contains(q) || name.contains(q)
             let valHit = e.value.summary.lowercased().contains(q)
             switch scope { case 1: return keyHit; case 2: return valHit; default: return keyHit || valHit }
         }
@@ -271,7 +273,7 @@ struct GestaltNodeView: View {
             Image(systemName: e.value.kind.symbol).frame(width: 24).foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 2) {
                 Text(e.step.label).font(.subheadline.monospaced()).lineLimit(1)
-                if let n = PresetCatalog.knownKeys[e.step.label] { Text(n).font(.caption).foregroundStyle(settings.accent.color) }
+                if let n = PresetCatalog.readableName(e.step.label) { Text(n).font(.caption).foregroundStyle(settings.accent.color) }
                 Text("\(e.value.kind.title) · \(e.value.summary)").font(.caption).foregroundStyle(.secondary).lineLimit(2)
             }
             Spacer(minLength: 0)

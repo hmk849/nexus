@@ -35,38 +35,57 @@ struct GestaltPreset: Identifiable, Sendable {
 }
 
 enum PresetCatalog {
-    /// 只收录有公开资料可核对的键名；其余功能不提供一键修改，避免伪造键值。
+    private static func extra(_ name: String) -> [PathStep] { [.key("CacheExtra"), .key(MGKeyCatalog.hash(name))] }
+    private static let flagNote = "键名由 GitHub 项目 PoomSmart/MGKeys 的映射表核实；这是布尔能力位，预设写入整数 1（常见做法，未经验证）。仅修改你导入的 plist 副本。"
+
+    /// 键名均已与 MGKeys 映射表逐项核对。值是否正确、系统是否接受，NEXUS 无法验证，因此全部标「未经验证」。
     static let all: [GestaltPreset] = [
+        GestaltPreset(id: "di", title: "灵动岛（能力位）", symbol: "capsule.fill",
+                      edits: [.init(path: extra("DeviceSupportsDynamicIsland"), value: .integer(1))], status: .unverified,
+                      note: "DeviceSupportsDynamicIsland（iOS 17.4+）。\(flagNote) 机型相关的 ArtworkTraits 子类型值本应用未核实，需另行手动编辑。"),
         GestaltPreset(id: "aod", title: "Always On Display", symbol: "sun.max",
-                      edits: [.init(path: [.key("CacheExtra"), .key("j8/Omm6s1lsmTDFsXjsBfA")], value: .integer(1))],
-                      status: .unverified,
-                      note: "键 j8/Omm6s1lsmTDFsXjsBfA（DeviceSupportsAlwaysOnTime，来源：hsu.cy 研究文章）。值 1 为常见做法，未经本应用验证。"),
-        GestaltPreset(id: "ai", title: "Apple Intelligence（Generative Model 能力位）", symbol: "sparkles",
-                      edits: [.init(path: [.key("CacheExtra"), .key("A62OafQ85EJAiiqKn4agtg")], value: .integer(1))],
-                      status: .unverified,
-                      note: "键来源于社区文档，未经验证；该功能还取决于 eligibility 与地区，仅修改文件副本并不能开启。"),
-        GestaltPreset(id: "di", title: "灵动岛", symbol: "capsule.fill", edits: [], status: .unverified,
-                      note: "涉及 ArtworkTraits（oPeik/9e8lQWMszEjbPzng）内的设备子类型，机型相关，本应用未核实具体值。请用字段浏览器手动编辑。"),
-        GestaltPreset(id: "pencil", title: "Apple Pencil", symbol: "pencil.tip", edits: [], status: .unverified, note: "键名未核实，不提供一键修改。"),
-        GestaltPreset(id: "camctl", title: "相机控制", symbol: "camera.aperture", edits: [], status: .unverified, note: "键名未核实，不提供一键修改。"),
-        GestaltPreset(id: "action", title: "操作按钮", symbol: "button.horizontal", edits: [], status: .unverified, note: "键名未核实，不提供一键修改。"),
-        GestaltPreset(id: "hdr", title: "HDR", symbol: "sun.max.fill", edits: [], status: .unverified, note: "键名未核实，不提供一键修改。"),
-        GestaltPreset(id: "glass", title: "Liquid Glass", symbol: "drop.fill", edits: [], status: .unverified, note: "键名未核实，不提供一键修改。"),
-        GestaltPreset(id: "stage", title: "台前调度", symbol: "rectangle.3.group", edits: [], status: .unverified, note: "键名未核实，不提供一键修改。"),
+                      edits: [.init(path: extra("DeviceSupportsAlwaysOnDisplay"), value: .integer(1))], status: .unverified,
+                      note: "DeviceSupportsAlwaysOnDisplay（iOS 18.0+）。\(flagNote) 相关键 DeviceSupportsAlwaysOnTime（iOS 13+）、DeviceSupportsAlwaysOnDisplayFlipbook 可在字段浏览器按名称搜索。"),
+        GestaltPreset(id: "aodvib", title: "AOD 动态模糊（Vibrancy）", symbol: "circle.dotted",
+                      edits: [.init(path: extra("DeviceSupportsAODVibrancy"), value: .integer(1))], status: .unverified,
+                      note: "DeviceSupportsAODVibrancy（iOS 18.0+）。\(flagNote)"),
+        GestaltPreset(id: "pencil", title: "Apple Pencil", symbol: "pencil.tip",
+                      edits: [.init(path: extra("DeviceSupportsApplePencil"), value: .integer(1))], status: .unverified,
+                      note: "DeviceSupportsApplePencil（iOS 9.3+）。\(flagNote)"),
+        GestaltPreset(id: "camctl", title: "相机控制", symbol: "camera.aperture",
+                      edits: [.init(path: extra("CameraButtonCapability"), value: .integer(1))], status: .unverified,
+                      note: "CameraButtonCapability（iOS 18.0+）。\(flagNote)"),
+        GestaltPreset(id: "action", title: "操作按钮", symbol: "button.horizontal", edits: [], status: .unverified,
+                      note: "对应键 RingerButtonCapability（iOS 17.0+，键名已核实）。它是枚举而非布尔，可接受的取值我在 GitHub 页面上没找到文档，所以不提供一键修改；请在字段浏览器按名称搜索后手动编辑。"),
+        GestaltPreset(id: "ai", title: "Apple Intelligence（生成式模型能力位）", symbol: "sparkles",
+                      edits: [.init(path: extra("DeviceSupportsGenerativeModelSystems"), value: .integer(1))], status: .unverified,
+                      note: "DeviceSupportsGenerativeModelSystems（iOS 18.0+）。\(flagNote) 是否开放还取决于 eligibility 与地区，仅改文件副本并不能开启功能。"),
+        GestaltPreset(id: "hdr", title: "HDR", symbol: "sun.max.fill", edits: [], status: .unverified,
+                      note: "候选键（均已核实键名）：DeviceSupportsHDRPhotoDisplay（iOS 14.5+）、DeviceSupportsExternalHDR（iOS 12.1+）。“HDR”具体指哪一项无法确定，不提供一键修改。"),
+        GestaltPreset(id: "glass", title: "Liquid Glass 低性能模式", symbol: "drop.fill",
+                      edits: [.init(path: extra("IsSolariumLowPerformanceDevice"), value: .integer(1))], status: .unverified,
+                      note: "IsSolariumLowPerformanceDevice（iOS 26.0+）。这是把设备标记为「低性能」以降级玻璃效果的开关，不是启用 Liquid Glass。\(flagNote)"),
+        GestaltPreset(id: "stage", title: "台前调度 / 增强多任务", symbol: "rectangle.3.group",
+                      edits: [.init(path: extra("DeviceSupportsEnhancedMultitasking"), value: .integer(1))], status: .unverified,
+                      note: "DeviceSupportsEnhancedMultitasking（iOS 16.0+）；另有 DeviceSupportsSingleDisplayEnhancedMultitasking。\(flagNote) 完整效果可能还需要其他字段。"),
+        GestaltPreset(id: "tap", title: "抬起 / 轻点唤醒", symbol: "hand.tap",
+                      edits: [.init(path: extra("DeviceSupportsTapToWake"), value: .integer(1))], status: .unverified, note: "DeviceSupportsTapToWake。\(flagNote)"),
+        GestaltPreset(id: "chime", title: "开关机提示音", symbol: "speaker.wave.2",
+                      edits: [.init(path: extra("DeviceSupportsBootChime"), value: .integer(1))], status: .unverified, note: "DeviceSupportsBootChime。\(flagNote)"),
+        GestaltPreset(id: "charge", title: "80% 充电上限选项", symbol: "battery.75percent",
+                      edits: [.init(path: extra("DeviceSupports80ChargeLimit"), value: .integer(1))], status: .unverified, note: "DeviceSupports80ChargeLimit（iOS 17.0+）。\(flagNote)"),
+        GestaltPreset(id: "sos", title: "碰撞 SOS", symbol: "exclamationmark.triangle",
+                      edits: [.init(path: extra("DeviceSupportsCollisionSOS"), value: .integer(1))], status: .unverified, note: "DeviceSupportsCollisionSOS（iOS 16.0+）。\(flagNote)"),
     ]
 
-    /// 已核实的哈希键 → 可读名称（来源：The Apple Wiki / hsu.cy）。
-    static let knownKeys: [String: String] = [
-        "oPeik/9e8lQWMszEjbPzng": "ArtworkTraits", "h9jDsbgj7xIVeIQ8S3/X3Q": "ProductType",
-        "j8/Omm6s1lsmTDFsXjsBfA": "DeviceSupportsAlwaysOnTime", "JUWcn+5Ss0nvr5w/jk4WEg": "device-name",
-        "LTI8wHvEYKy8zR1IXBW1uQ": "ArtworkTraitDisplayGamut",
-    ]
+    /// 兼容旧调用：哈希键 → 可读名称
+    static func readableName(_ key: String) -> String? { MGKeyCatalog.name(forHash: key) }
 }
 
 /// 通过 dlsym 调用私有 MGCopyAnswer，仅用于读取。系统可能拒绝返回，此时显示「不可获取」。
 enum LiveGestalt {
     typealias MGCopyAnswerFn = @convention(c) (CFString) -> Unmanaged<AnyObject>?
-    static let sampleKeys = ["ProductType", "ProductVersion", "BuildVersion", "HWModelStr", "ArtworkDeviceSubType"]
+    static let sampleKeys = ["ProductType", "ProductVersion", "BuildVersion", "HWModelStr", "marketing-name", "marketing-soc-name", "DeviceMemorySize"]
 
     static func answer(_ key: String) -> PlistValue? {
         guard let h = dlopen("/usr/lib/libMobileGestalt.dylib", RTLD_LAZY),

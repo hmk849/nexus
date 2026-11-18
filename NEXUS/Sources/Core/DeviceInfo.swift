@@ -72,6 +72,8 @@ enum DeviceInfoService {
         out.append(InfoSection(title: "设备", symbol: "iphone", items: [
             InfoItem(title: "型号", value: snap.marketingName ?? "未收录（\(snap.identifier)）"),
             InfoItem(title: "机型标识符", value: snap.identifier),
+            InfoItem(title: "市场名称（MobileGestalt）", value: LiveGestalt.answer("marketing-name")?.summary,
+                     note: "私有 API（键 marketing-name），未经验证；读取失败时显示不可获取"),
             InfoItem(title: "设备名称", value: dev.name, note: "iOS 16+ 未获得授权时系统只返回通用名称"),
             InfoItem(title: "系统", value: "\(dev.systemName) \(dev.systemVersion)"),
             InfoItem(title: "Build Number", value: snap.build),
@@ -89,7 +91,9 @@ enum DeviceInfoService {
             InfoItem(title: "L2 缓存", value: sysctlInt("hw.l2cachesize").map { formatBytes($0, style: .binary) }),
             InfoItem(title: "CPU 主频", value: sysctlInt("hw.cpufrequency").map { "\($0 / 1_000_000) MHz" }, note: "iOS 不开放主频"),
         ]
-        cpu.append(InfoItem(title: "芯片市场名称", value: nil, note: "公开 API 不直接提供；GPU 名称通常含芯片代号"))
+        let soc = LiveGestalt.answer("marketing-soc-name")?.summary
+        cpu.append(InfoItem(title: "芯片市场名称", value: soc,
+                            note: soc == nil ? "公开 API 不提供；私有 MobileGestalt 读取也未返回（键 marketing-soc-name）" : "来自私有 MobileGestalt 键 marketing-soc-name，未经验证"))
         out.append(InfoSection(title: "CPU", symbol: "cpu", items: cpu))
 
         var gpu: [InfoItem] = []

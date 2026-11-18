@@ -22,7 +22,7 @@ struct OSVersion: Comparable, Sendable, CustomStringConvertible {
     var description: String { patch == 0 ? "\(major).\(minor)" : "\(major).\(minor).\(patch)" }
 }
 
-/// 机型表由编辑者根据公开资料整理，未经 Apple 官方清单逐项核对；未收录的机型一律标注「未经验证」。
+/// 机型表来自 GitHub（adamawolf 机型 ID gist、DeviceKit）与 Apple 规格页；未收录的机型（如 iPhone 18 Pro）一律标注「未经验证」。
 enum ModelTable {
     static let names: [String: String] = [
         "iPhone12,1": "iPhone 11", "iPhone12,3": "iPhone 11 Pro", "iPhone12,5": "iPhone 11 Pro Max",
@@ -34,14 +34,26 @@ enum ModelTable {
         "iPhone16,1": "iPhone 15 Pro", "iPhone16,2": "iPhone 15 Pro Max",
         "iPhone17,1": "iPhone 16 Pro", "iPhone17,2": "iPhone 16 Pro Max", "iPhone17,3": "iPhone 16", "iPhone17,4": "iPhone 16 Plus",
         "iPhone17,5": "iPhone 16e",
+        // 以下标识符来自 adamawolf 的机型 ID 列表 gist 与 EveryMac（GitHub / 公开页面核对）
+        "iPhone18,1": "iPhone 17 Pro", "iPhone18,2": "iPhone 17 Pro Max", "iPhone18,3": "iPhone 17",
+        "iPhone18,4": "iPhone Air", "iPhone18,5": "iPhone 17e",
     ]
+    // iPhone 17 / Air 的灵动岛、Always-On 已由 Apple 规格页核实；17 系列的相机控制、操作按钮据 MacRumors（17 Pro 系列同款）。
     static let dynamicIsland: Set<String> = ["iPhone15,2", "iPhone15,3", "iPhone15,4", "iPhone15,5", "iPhone16,1", "iPhone16,2",
-                                             "iPhone17,1", "iPhone17,2", "iPhone17,3", "iPhone17,4"]
-    static let alwaysOn: Set<String> = ["iPhone15,2", "iPhone15,3", "iPhone16,1", "iPhone16,2", "iPhone17,1", "iPhone17,2"]
-    static let cameraControl: Set<String> = ["iPhone17,1", "iPhone17,2", "iPhone17,3", "iPhone17,4"]
+                                             "iPhone17,1", "iPhone17,2", "iPhone17,3", "iPhone17,4",
+                                             "iPhone18,1", "iPhone18,2", "iPhone18,3", "iPhone18,4"]
+    static let alwaysOn: Set<String> = ["iPhone15,2", "iPhone15,3", "iPhone16,1", "iPhone16,2", "iPhone17,1", "iPhone17,2",
+                                        "iPhone18,1", "iPhone18,2", "iPhone18,3", "iPhone18,4"]
+    static let cameraControl: Set<String> = ["iPhone17,1", "iPhone17,2", "iPhone17,3", "iPhone17,4",
+                                             "iPhone18,1", "iPhone18,2", "iPhone18,3"]
     static let actionButton: Set<String> = ["iPhone15,4", "iPhone15,5", "iPhone16,1", "iPhone16,2",
-                                            "iPhone17,1", "iPhone17,2", "iPhone17,3", "iPhone17,4", "iPhone17,5"]
-    static let appleIntelligence: Set<String> = ["iPhone16,1", "iPhone16,2", "iPhone17,1", "iPhone17,2", "iPhone17,3", "iPhone17,4", "iPhone17,5"]
+                                            "iPhone17,1", "iPhone17,2", "iPhone17,3", "iPhone17,4", "iPhone17,5",
+                                            "iPhone18,1", "iPhone18,2", "iPhone18,3"]
+    static let appleIntelligence: Set<String> = ["iPhone16,1", "iPhone16,2", "iPhone17,1", "iPhone17,2", "iPhone17,3", "iPhone17,4", "iPhone17,5",
+                                                 "iPhone18,1", "iPhone18,2", "iPhone18,3", "iPhone18,4"]
+    /// 已收录名称但本应用没有核实到该项规格的机型（一律标「未经验证」，不猜测）
+    static let specUnverified: Set<String> = ["iPhone18,5"]
+    static let specUnverifiedAirExtra: Set<String> = ["iPhone18,4", "iPhone18,5"]
 }
 
 struct DeviceSnapshot: Sendable {
@@ -88,12 +100,13 @@ enum CompatEngine {
     static func evaluate(_ f: Feature, _ d: DeviceSnapshot) -> Verdict {
         let major = d.os.major
         let beyond = major > researchedMax
-        func hw(_ set: Set<String>, minOS: OSVersion? = nil, phoneOnly: Bool = true) -> Verdict {
+        func hw(_ set: Set<String>, minOS: OSVersion? = nil, phoneOnly: Bool = true, unverified: Set<String> = ModelTable.specUnverified) -> Verdict {
             if phoneOnly && d.isPad { return Verdict(status: .unsupported, reason: "该功能为 iPhone 硬件特性") }
             if !d.recognized { return Verdict(status: .unverified, reason: "机型 \(d.identifier) 不在本应用机型表中") }
-            guard set.contains(d.identifier) else { return Verdict(status: .unsupported, reason: "\(d.marketingName ?? d.identifier) 不具备该硬件（机型表为编辑者整理，未经官方核对）") }
+            if unverified.contains(d.identifier) { return Verdict(status: .unverified, reason: "\(d.marketingName ?? d.identifier) 的这项规格本应用未能从官方页面核实") }
+            guard set.contains(d.identifier) else { return Verdict(status: .unsupported, reason: "\(d.marketingName ?? d.identifier) 不具备该硬件（依据公开机型列表整理，可能滞后）") }
             if let m = minOS, d.os < m { return Verdict(status: .limited, reason: "硬件支持，但需要 iOS \(m) 或更高（当前 \(d.os)）") }
-            return Verdict(status: .available, reason: "机型表匹配（编辑者整理，未经官方核对）")
+            return Verdict(status: .available, reason: "机型表匹配（依据 Apple 规格页 / 公开机型列表整理）")
         }
         switch f {
         case .systemInfo, .diagnostics:
@@ -113,8 +126,8 @@ enum CompatEngine {
                                : Verdict(status: .limited, reason: "iOS 26 以下使用 Material 兼容方案")
         case .dynamicIsland: return hw(ModelTable.dynamicIsland)
         case .alwaysOnDisplay: return hw(ModelTable.alwaysOn)
-        case .cameraControl: return hw(ModelTable.cameraControl, minOS: OSVersion(major: 18, minor: 0, patch: 0))
-        case .actionButton: return hw(ModelTable.actionButton, minOS: OSVersion(major: 17, minor: 0, patch: 0))
+        case .cameraControl: return hw(ModelTable.cameraControl, minOS: OSVersion(major: 18, minor: 0, patch: 0), unverified: ModelTable.specUnverifiedAirExtra)
+        case .actionButton: return hw(ModelTable.actionButton, minOS: OSVersion(major: 17, minor: 0, patch: 0), unverified: ModelTable.specUnverifiedAirExtra)
         case .appleIntelligence:
             let v = hw(ModelTable.appleIntelligence, minOS: OSVersion(major: 18, minor: 1, patch: 0))
             return v.status == .available ? Verdict(status: .available, reason: v.reason + "；是否开放还取决于地区与语言，应用无法判定") : v
